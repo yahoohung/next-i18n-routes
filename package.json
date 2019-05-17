@@ -1,8 +1,8 @@
 {
   "name": "next-routes",
   "version": "1.4.2",
-  "description": "Easy to use universal dynamic routes for Next.js",
-  "repository": "fridays/next-routes",
+  "description": "Easy to use universal dynamic routes with i18n for Next.js",
+  "repository": "yahoohung/next-i18n-routes",
   "main": "dist",
   "typings": "typings/next-routes.d.ts",
   "files": [
@@ -31,34 +31,34 @@
     ]
   },
   "dependencies": {
-    "path-to-regexp": "^2.1.0"
+    "path-to-regexp": "^3.0.0"
   },
   "peerDependencies": {
-    "next": ">=2",
-    "react": "^15.4.2 || ^16"
+    "next": ">=8.1.0",
+    "react": "^16.8.6"
   },
   "devDependencies": {
-    "@babel/cli": "^7.0.0-beta.47",
-    "@babel/core": "^7.0.0-beta.47",
-    "@babel/preset-env": "^7.0.0-beta.47",
-    "@types/next": "^2.4.8",
-    "@types/node": "^10.1.2",
-    "babel-core": "^7.0.0-bridge.0",
-    "babel-eslint": "^8.2.1",
-    "babel-jest": "^22.4.3",
-    "concurrently": "^3.5.0",
-    "coveralls": "^3.0.0",
+    "@babel/cli": "^7.4.4",
+    "@babel/core": "^7.4.4",
+    "@babel/preset-env": "^7.4.4",
+    "@types/next": "^8.0.5",
+    "@types/node": "^12.0.2",
+    "babel-core": "^6.26.3",
+    "babel-eslint": "^10.0.1",
+    "babel-jest": "^24.8.0",
+    "concurrently": "^4.1.0",
+    "coveralls": "^3.0.3",
     "del-cli": "^1.1.0",
-    "jest": "^22.4.3",
-    "next": "^6.0.0",
-    "prop-types": "^15.6.0",
-    "react": "^16.0.0",
-    "react-dom": "^16.0.0",
-    "react-test-renderer": "^16.0.0",
-    "standard": "^11.0.1",
-    "typescript": "^2.7.2"
+    "jest": "^24.8.0",
+    "next": "^8.1.0",
+    "prop-types": "^15.7.2",
+    "react": "^16.8.6",
+    "react-dom": "^16.8.6",
+    "react-test-renderer": "^16.8.6",
+    "standard": "^12.0.1",
+    "typescript": "^3.4.5"
   },
-  "author": "fridays",
+  "author": "yahoohung",
   "license": "MIT",
   "keywords": [
     "next",
@@ -67,6 +67,7 @@
     "route",
     "router",
     "routes",
-    "routing"
+    "routing",
+    "i18n"
   ]
 }

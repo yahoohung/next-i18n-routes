@@ -1,23 +1,33 @@
 import pathToRegexp from 'path-to-regexp'
 import React from 'react'
-import {parse} from 'url'
+import { parse } from 'url'
 import NextLink from 'next/link'
 import NextRouter from 'next/router'
 
 module.exports = opts => new Routes(opts)
 
 class Routes {
-  constructor ({
+  constructor({
     Link = NextLink,
-    Router = NextRouter
+    Router = NextRouter,
+    locales = ['en'],
+    defaultLocale = 'en',
+    prefix = ''
   } = {}) {
     this.routes = []
     this.Link = this.getLink(Link)
     this.Router = this.getRouter(Router)
+    this.locales = locales
+    this.defaultLocale = defaultLocale
+    this.prefix = prefix
   }
 
-  add (name, pattern, page) {
+  add(name, pattern, page, disableLocales = []) {
+
     let options
+    let locales
+    locales = this.locales.filter(item => !disableLocales.includes(item))
+
     if (name instanceof Object) {
       options = name
       name = options.name
@@ -27,57 +37,66 @@ class Routes {
         pattern = name
         name = null
       }
-      options = {name, pattern, page}
+      options = { name, pattern, page }
     }
 
     if (this.findByName(name)) {
       throw new Error(`Route "${name}" already exists`)
     }
 
+    options.pattern = `/:lang(${locales.join('|')})?${this.prefix}${options.pattern || `/${options.name}`}`
+
     this.routes.push(new Route(options))
     return this
   }
 
-  findByName (name) {
+  findByName(name) {
     if (name) {
       return this.routes.filter(route => route.name === name)[0]
     }
   }
 
-  match (url) {
+  match(url) {
     const parsedUrl = parse(url, true)
-    const {pathname, query} = parsedUrl
+    const { pathname, query } = parsedUrl
 
-    return this.routes.reduce((result, route) => {
+    const reducer = this.routes.reduce((result, route) => {
       if (result.route) return result
       const params = route.match(pathname)
       if (!params) return result
-      return {...result, route, params, query: {...query, ...params}}
-    }, {query, parsedUrl})
+      return { ...result, route, params, query: { ...query, ...params } }
+    }, { query, parsedUrl })
+
+    reducer.query = {
+      ...reducer.query,
+      lang: reducer.query.lang ? reducer.query.lang : this.defaultLocale
+    }
+
+    return reducer
   }
 
-  findAndGetUrls (nameOrUrl, params) {
+  findAndGetUrls(nameOrUrl, params) {
     const route = this.findByName(nameOrUrl)
 
     if (route) {
-      return {route, urls: route.getUrls(params), byName: true}
+      return { route, urls: route.getUrls(params), byName: true }
     } else {
-      const {route, query} = this.match(nameOrUrl)
+      const { route, query } = this.match(nameOrUrl)
       const href = route ? route.getHref(query) : nameOrUrl
-      const urls = {href, as: nameOrUrl}
-      return {route, urls}
+      const urls = { href, as: nameOrUrl }
+      return { route, urls }
     }
   }
 
-  getRequestHandler (app, customHandler) {
+  getRequestHandler(app, customHandler) {
     const nextHandler = app.getRequestHandler()
 
     return (req, res) => {
-      const {route, query, parsedUrl} = this.match(req.url)
+      const { route, query, parsedUrl } = this.match(req.url)
 
       if (route) {
         if (customHandler) {
-          customHandler({req, res, route, query})
+          customHandler({ req, res, route, query })
         } else {
           app.render(req, res, route.page, query)
         }
@@ -87,9 +106,9 @@ class Routes {
     }
   }
 
-  getLink (Link) {
+  getLink(Link) {
     const LinkRoutes = props => {
-      const {route, params, to, ...newProps} = props
+      const { route, params, to, ...newProps } = props
       const nameOrUrl = route || to
 
       if (nameOrUrl) {
@@ -101,9 +120,9 @@ class Routes {
     return LinkRoutes
   }
 
-  getRouter (Router) {
+  getRouter(Router) {
     const wrap = method => (route, params, options) => {
-      const {byName, urls: {as, href}} = this.findAndGetUrls(route, params)
+      const { byName, urls: { as, href } } = this.findAndGetUrls(route, params)
       return Router[method](href, as, byName ? options : params)
     }
 
@@ -115,7 +134,7 @@ class Routes {
 }
 
 class Route {
-  constructor ({name, pattern, page = name}) {
+  constructor({ name, pattern, page = name, disableLocales = [] }) {
     if (!name && !page) {
       throw new Error(`Missing page to render for route "${pattern}"`)
     }
@@ -128,14 +147,14 @@ class Route {
     this.toPath = pathToRegexp.compile(this.pattern)
   }
 
-  match (path) {
+  match(path) {
     const values = this.regex.exec(path)
     if (values) {
       return this.valuesToParams(values.slice(1))
     }
   }
 
-  valuesToParams (values) {
+  valuesToParams(values) {
     return values.reduce((params, val, i) => {
       if (val === undefined) return params
       return Object.assign(params, {
@@ -144,11 +163,11 @@ class Route {
     }, {})
   }
 
-  getHref (params = {}) {
+  getHref(params = {}) {
     return `${this.page}?${toQuerystring(params)}`
   }
 
-  getAs (params = {}) {
+  getAs(params = {}) {
     const as = this.toPath(params) || '/'
     const keys = Object.keys(params)
     const qsKeys = keys.filter(key => this.keyNames.indexOf(key) === -1)
@@ -162,10 +181,10 @@ class Route {
     return `${as}?${toQuerystring(qsParams)}`
   }
 
-  getUrls (params) {
+  getUrls(params) {
     const as = this.getAs(params)
     const href = this.getHref(params)
-    return {as, href}
+    return { as, href }
   }
 }
 

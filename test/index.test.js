@@ -7,7 +7,11 @@ import nextRoutes from '../dist'
 const renderer = new ReactShallowRenderer()
 
 const setupRoute = (...args) => {
-  const routes = nextRoutes().add(...args)
+  const routes = nextRoutes({
+    prefix: '/project-a',
+    locales: ['zh-cn', 'en'],
+    defaultLocale: 'zh-hk'    
+  }).add(...args)
   const route = routes.routes[routes.routes.length - 1]
   return {routes, route}
 }
