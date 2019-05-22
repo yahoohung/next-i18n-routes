@@ -1,10 +1,9 @@
 # Dynamic Routes for Next.js
 
-[![npm version](https://d25lcipzij17d.cloudfront.net/badge.svg?id=js&type=6&v=1.4.2&x2=0)](https://www.npmjs.com/package/next-routes) [![Coverage Status](https://coveralls.io/repos/github/fridays/next-routes/badge.svg)](https://coveralls.io/github/fridays/next-routes) [![Build Status](https://travis-ci.org/fridays/next-routes.svg?branch=master)](https://travis-ci.org/fridays/next-routes)
-
-Easy to use universal dynamic routes for [Next.js](https://github.com/zeit/next.js)
+Easy to use universal dynamic routes with i18n for [Next.js](https://github.com/zeit/next.js)
 
 - Express-style route and parameters matching
+- Support mlti-languages url pattern 
 - Request handler middleware for express & co
 - `Link` and `Router` that generate URLs by route definition
 
@@ -13,28 +12,40 @@ Easy to use universal dynamic routes for [Next.js](https://github.com/zeit/next.
 Install:
 
 ```bash
-npm install next-routes --save
+npm install next-i18n-routes --save
 ```
 
 Create `routes.js` inside your project:
 
 ```javascript
-const routes = require('next-routes')
+const routes = require('./next-i18n-routes')
 
-                                                    // Name   Page      Pattern
-module.exports = routes()                           // ----   ----      -----
-.add('about')                                       // about  about     /about
-.add('blog', '/blog/:slug')                         // blog   blog      /blog/:slug
-.add('user', '/user/:id', 'profile')                // user   profile   /user/:id
-.add('/:noname/:lang(en|es)/:wow+', 'complex')      // (none) complex   /:noname/:lang(en|es)/:wow+
-.add({name: 'beta', pattern: '/v3', page: 'v3'})    // beta   v3        /v3
+module.exports = routes({
+    prefix: '/project-a',
+    locales: ['zh-cn', 'en'],
+    defaultLocale: 'zh-hk'
+})      
+    // Name   Pattern    Page            Ignore Languages            
+    // ----   ----       -----           -----
+.add('hello')              
+    // hello  /hello     hello    
+.add('user', '/user/:id', 'profile') 
+    // user   /user/:id  profile
+.add('yeah', '/yeah', 'yeah', ['en']) 
+    // user   /user/:id  profile         [en]
+
+// /hello = locale = zh-hk, page = hello
+// /zh-hk/hello = 404
+// /en/hello = locale = en, page = hello
+// /zh-cn/hello = locale = zh-cn, page = hello
+// /en/yeah = 404
 ```
 
 This file is used both on the server and the client.
 
 API:
 
-- `routes.add([name], pattern = /name, page = name)`
+- `routes.add([name], pattern = /name, page = name, [ignore languages])`
 - `routes.add(object)`
 
 Arguments:
@@ -47,9 +58,10 @@ The page component receives the matched URL parameters merged into `query`
 
 ```javascript
 export default class Blog extends React.Component {
-  static async getInitialProps ({query}) {
-    // query.slug
+  static async getInitialProps({ Component, ctx, router }) {
+    // router.query.lang
   }
+
   render () {
     // this.props.url.query.slug
   }
@@ -75,6 +87,52 @@ app.prepare().then(() => {
 const {createServer} = require('http')
 app.prepare().then(() => {
   createServer(handler).listen(3000)
+})
+
+// With fastify
+
+const fastify = require('fastify')({ logger: { level: 'error' } })
+const Next = require('next')
+
+const routes = require('./routes')
+const port = parseInt(process.env.PORT, 10) || 3000
+const dev = process.env.NODE_ENV !== 'production'
+
+
+
+fastify.register((fastify, opts, next) => {
+  const app = Next({ dev })
+  const handler = routes.getRequestHandler(app)  
+  app
+    .prepare()
+    .then(() => {
+      if (dev) {
+        fastify.get('/_next/*', (req, reply) => {
+          return app.handleRequest(req.req, reply.res).then(() => {
+            reply.sent = true
+          })
+        })
+      }
+
+      fastify.get('/*', (req, reply) => {
+          console.log('')
+        return handler(req.req, reply.res)
+      })
+
+      fastify.setNotFoundHandler((request, reply) => {
+        return app.render404(request.req, reply.res).then(() => {
+          reply.sent = true
+        })
+      })
+
+      next()
+    })
+    .catch(err => next(err))
+})
+
+fastify.listen(port, err => {
+  if (err) throw err
+  console.log(`> Ready on http://localhost:${port}`)
 })
 ```
 
