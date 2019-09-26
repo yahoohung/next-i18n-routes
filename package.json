@@ -11,7 +11,7 @@
   ],
   "scripts": {
     "lint": "standard 'src/*' 'test/*'",
-      "fix": "standard 'src/*' 'test/*' --fix",
+    "fix": "standard 'src/*' 'test/*' --fix",
     "build": "del dist/* && babel src -d dist",
     "prepublishOnly": "npm run test",
     "pretest": "npm run lint && npm run build",
@@ -35,8 +35,8 @@
     "path-to-regexp": "^3.0.0"
   },
   "peerDependencies": {
-    "next": ">=8.1.0",
-    "react": "^16.8.6"
+    "next": ">=9.0.6",
+    "react": "^16.9.0"
   },
   "devDependencies": {
     "@babel/cli": "^7.4.4",
@@ -51,13 +51,13 @@
     "coveralls": "^3.0.3",
     "del-cli": "^1.1.0",
     "jest": "^24.8.0",
-    "next": "^8.1.0",
+    "next": "^9.0.6",
     "prop-types": "^15.7.2",
-    "react": "^16.8.6",
-    "react-dom": "^16.8.6",
-    "react-test-renderer": "^16.8.6",
-    "standard": "^12.0.1",
-    "typescript": "^3.4.5"
+    "react": "^16.9.0",
+    "react-dom": "^16.9.0",
+    "react-test-renderer": "^16.9.0",
+    "standard": "^14.3.1",
+    "typescript": "^3.6.3"
   },
   "author": "yahoohung",
   "license": "MIT",
