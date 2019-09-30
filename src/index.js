@@ -36,7 +36,7 @@ class Routes {
         pattern = name
         name = null
       }
-      options = { name, pattern, page }
+      options = { name, pattern, page, defaultLocale: this.defaultLocale }
     }
 
     if (this.findByName(name)) {
@@ -74,11 +74,11 @@ class Routes {
     return reducer
   }
 
-  findAndGetUrls (nameOrUrl, params) {
+  findAndGetUrls (nameOrUrl, params, language) {
     const route = this.findByName(nameOrUrl)
 
     if (route) {
-      return { route, urls: route.getUrls(params), byName: true }
+      return { route, urls: route.getUrls(params, language), byName: true }
     } else {
       const { route, query } = this.match(nameOrUrl)
       const href = route ? route.getHref(query) : nameOrUrl
@@ -107,11 +107,11 @@ class Routes {
 
   getLink (Link) {
     const LinkRoutes = props => {
-      const { route, params, to, ...newProps } = props
+      const { route, params, to, language, ...newProps } = props
       const nameOrUrl = route || to
 
       if (nameOrUrl) {
-        Object.assign(newProps, this.findAndGetUrls(nameOrUrl, params).urls)
+        Object.assign(newProps, this.findAndGetUrls(nameOrUrl, params, language).urls)
       }
 
       return <Link {...newProps} />
@@ -120,8 +120,8 @@ class Routes {
   }
 
   getRouter (Router) {
-    const wrap = method => (route, params, options) => {
-      const { byName, urls: { as, href } } = this.findAndGetUrls(route, params)
+    const wrap = method => (route, params, options, language) => {
+      const { byName, urls: { as, href } } = this.findAndGetUrls(route, params, language)
       return Router[method](href, as, byName ? options : params)
     }
 
@@ -133,7 +133,7 @@ class Routes {
 }
 
 class Route {
-  constructor ({ name, pattern, page = name, disableLocales = [] }) {
+  constructor ({ name, pattern, page = name, disableLocales = [], defaultLocale }) {
     if (!name && !page) {
       throw new Error(`Missing page to render for route "${pattern}"`)
     }
@@ -144,6 +144,7 @@ class Route {
     this.regex = pathToRegexp(this.pattern, this.keys = [])
     this.keyNames = this.keys.map(key => key.name)
     this.toPath = pathToRegexp.compile(this.pattern)
+    this.defaultLocale = defaultLocale
   }
 
   match (path) {
@@ -162,12 +163,14 @@ class Route {
     }, {})
   }
 
-  getHref (params = {}) {
-    return `${this.page}?${toQuerystring(params)}`
+  getHref (params = {}, language) {
+    const languageQuery = (language && language !== this.defaultLocale) ? `lang=${language}&` : ''
+    return `${this.page}?${languageQuery}${toQuerystring(params)}`
   }
 
-  getAs (params = {}) {
-    const as = this.toPath(params) || '/'
+  getAs (params = {}, language) {
+    const languagePath = (language && language !== this.defaultLocale) ? `/${language}` : ''
+    const as = this.toPath(params) ? `${languagePath}${this.toPath(params)}` : '/'
     const keys = Object.keys(params)
     const qsKeys = keys.filter(key => this.keyNames.indexOf(key) === -1)
 
@@ -180,9 +183,9 @@ class Route {
     return `${as}?${toQuerystring(qsParams)}`
   }
 
-  getUrls (params) {
-    const as = this.getAs(params)
-    const href = this.getHref(params)
+  getUrls (params, language) {
+    const as = this.getAs(params, language)
+    const href = this.getHref(params, language)
     return { as, href }
   }
 }
